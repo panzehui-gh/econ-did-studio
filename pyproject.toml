@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "econ-did-studio"
+version = "0.1.0"
+description = "A guided, reproducible DID and DDD analysis tool for applied researchers"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "EconDID Studio contributors"}]
+dependencies = [
+  "numpy>=1.26",
+  "pandas>=2.1",
+  "statsmodels>=0.14.4",
+  "matplotlib>=3.8",
+  "streamlit>=1.40",
+  "openpyxl>=3.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-cov>=5.0"]
+
+[project.scripts]
+econdid = "econdid.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
