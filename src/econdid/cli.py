@@ -8,6 +8,12 @@ from pathlib import Path
 import sys
 
 from .cleaning import clean_dataframe, dataframe_to_bytes, load_dataset
+from .cross_validation import (
+    cross_validation_summary,
+    run_dirty_pipeline_validation,
+    run_estimator_cross_validation,
+    save_cross_validation_figure,
+)
 from .mapping import suggest_roles
 from .models import ModelConfig, PRESETS, fit_model
 from .synthetic import generate_ddd_data, generate_did_data, make_messy_example
@@ -133,6 +139,26 @@ def cmd_validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_verify(args: argparse.Namespace) -> int:
+    """Run the independent estimator and dirty-pipeline verification suite."""
+
+    output = Path(args.output)
+    output.mkdir(parents=True, exist_ok=True)
+    estimator = run_estimator_cross_validation(range(args.replications))
+    dirty = run_dirty_pipeline_validation(range(args.dirty_replications))
+    summary = cross_validation_summary(estimator, dirty)
+    estimator.to_csv(output / "manual_vs_one_click.csv", index=False)
+    dirty.to_csv(output / "dirty_pipeline_results.csv", index=False)
+    summary.to_csv(output / "cross_validation_summary.csv", index=False)
+    save_cross_validation_figure(estimator, output / "manual_vs_one_click.pdf")
+    save_cross_validation_figure(estimator, output / "manual_vs_one_click.png")
+    print(summary.to_string(index=False))
+    if not bool(estimator["passed"].all() and dirty["passed"].all()):
+        print("At least one independent verification failed.", file=sys.stderr)
+        return 1
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="econdid", description="Guided DID/DDD analysis with auditable data cleaning."
@@ -162,6 +188,14 @@ def build_parser() -> argparse.ArgumentParser:
     validate_parser.add_argument("--replications", type=int, default=20)
     validate_parser.add_argument("--output", default="docs/validation")
     validate_parser.set_defaults(func=cmd_validate)
+
+    verify_parser = subparsers.add_parser(
+        "verify", help="Compare one-click results with independent NumPy regression code"
+    )
+    verify_parser.add_argument("--replications", type=int, default=50)
+    verify_parser.add_argument("--dirty-replications", type=int, default=30)
+    verify_parser.add_argument("--output", default="docs/cross_validation")
+    verify_parser.set_defaults(func=cmd_verify)
     return parser
 
 

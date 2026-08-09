@@ -1,0 +1,7 @@
+check,replications,pass_rate,max_estimate_abs_difference,max_std_error_abs_difference
+manual_vs_one_click:did_basic,50,1.0,0.0,5.551115123125783e-17
+manual_vs_one_click:did_twfe,50,1.0,1.2434497875801753e-14,2.4980018054066022e-15
+manual_vs_one_click:did_custom_fe,50,1.0,6.217248937900877e-15,5.051514762044462e-15
+manual_vs_one_click:ddd,50,1.0,1.3211653993039363e-14,5.384581669432009e-15
+dirty_pipeline:DID,30,1.0,1.198977553196201e-05,
+dirty_pipeline:DDD,30,1.0,3.0882469008286506e-05,
