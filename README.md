@@ -2,6 +2,8 @@
 
 [![tests](https://github.com/panzehui-gh/econ-did-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/panzehui-gh/econ-did-studio/actions/workflows/ci.yml)
 
+[日本語 README](README_ja.md)
+
 EconDID Studio helps applied researchers move from an untidy spreadsheet to an
 auditable difference-in-differences (DID) or triple-differences (DDD) estimate.
 The guided Streamlit interface is designed for users who know their research
@@ -24,6 +26,8 @@ design but do not want to write Python for every new dataset.
 - Supports numeric controls, categorical fixed effects, HC1 or cluster-robust
   standard errors, structural diagnostics, and downloadable reproducibility
   bundles.
+- Optionally creates report-ready descriptive trend charts and effect/95% CI
+  charts. Each is downloadable as PNG or vector PDF.
 - Includes synthetic data with known effects and Monte Carlo validation.
 
 ## Fastest start (web app)
@@ -66,6 +70,7 @@ Generate examples or rerun the numerical validation:
 ```bash
 econdid demo --model did --effect 2 --messy --output demo.csv
 econdid validate --replications 20 --output docs/validation
+econdid verify --replications 50 --dirty-replications 30 --output docs/cross_validation
 ```
 
 ## Model presets
@@ -89,6 +94,17 @@ estimators across random seeds and reports bias, RMSE, and 95% interval coverage
 The checked-in output is in [`docs/validation`](docs/validation).
 
 ![Synthetic validation estimates and confidence intervals](docs/validation/validation_results.png)
+
+The stronger independent cross-check reconstructs every regression design with
+NumPy matrix algebra, without calling statsmodels or reusing its design matrix.
+Across 200 random datasets (50 for each preset), all target coefficients and
+HC1/clustered standard errors agreed within `1e-8`; the largest observed
+coefficient difference was `1.32e-14`. A separate 60-run dirty-data check
+randomized column order and exercised cleaning, role inference, duplicate
+removal, and estimation end to end, with a 100% pass rate. Full evidence is in
+[`docs/cross_validation`](docs/cross_validation).
+
+![Independent manual versus one-click estimates](docs/cross_validation/manual_vs_one_click.png)
 
 ## Development
 

@@ -25,3 +25,16 @@ def test_ddd_demo_runs_end_to_end():
     assert not app.exception
     assert not app.error
     assert any(metric.label == "Estimated effect" for metric in app.metric)
+
+
+def test_visualizations_can_be_disabled_without_disabling_estimation():
+    app_path = Path(__file__).parents[1] / "streamlit_app.py"
+    app = AppTest.from_file(str(app_path), default_timeout=120).run()
+    app.checkbox[0].set_value(False).run()
+    app.button[0].click().run()
+    assert not app.exception
+    assert not app.error
+    assert any(metric.label == "Estimated effect" for metric in app.metric)
+    labels = {button.label for button in app.button}
+    assert "Download trends (PNG)" not in labels
+    assert "Download effect plot (vector PDF)" not in labels

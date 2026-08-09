@@ -14,7 +14,13 @@ import streamlit as st
 from econdid.cleaning import clean_dataframe, dataframe_to_bytes, load_dataset
 from econdid.mapping import suggest_roles
 from econdid.models import ModelConfig, PRESETS, fit_model
-from econdid.reporting import export_bundle, trend_figure
+from econdid.reporting import (
+    effect_figure,
+    export_bundle,
+    figure_to_bytes,
+    plain_language_interpretation,
+    trend_figure,
+)
 from econdid.synthetic import generate_did_data, make_messy_example
 
 
@@ -198,6 +204,14 @@ st.warning(
     "DID/DDD estimates are causal only under research-design assumptions such as parallel trends. "
     "The software checks data structure, but it cannot prove those assumptions from column names."
 )
+show_visuals = st.checkbox(
+    "Generate presentation-ready visualizations",
+    value=True,
+    help=(
+        "Creates descriptive outcome trends and an effect/95% confidence-interval plot. "
+        "Both can be downloaded as PNG or vector PDF."
+    ),
+)
 
 if st.button("Run model", type="primary", width="stretch"):
     if not all([outcome, treatment, post]):
@@ -235,10 +249,52 @@ if st.button("Run model", type="primary", width="stretch"):
         for warning in result.warnings:
             st.warning(warning)
     st.dataframe(result.coefficient_table(), width="stretch", hide_index=True)
+    st.info(plain_language_interpretation(result))
 
-    fig = trend_figure(result)
-    st.pyplot(fig)
-    plt.close(fig)
+    if show_visuals:
+        trend_tab, effect_tab = st.tabs(["Observed trends", "Effect and 95% CI"])
+        with trend_tab:
+            trend = trend_figure(result)
+            st.pyplot(trend)
+            png, pdf = st.columns(2)
+            with png:
+                st.download_button(
+                    "Download trends (PNG)",
+                    figure_to_bytes(trend, "png"),
+                    file_name="observed_trends.png",
+                    mime="image/png",
+                    key="download_trends_png",
+                )
+            with pdf:
+                st.download_button(
+                    "Download trends (vector PDF)",
+                    figure_to_bytes(trend, "pdf"),
+                    file_name="observed_trends.pdf",
+                    mime="application/pdf",
+                    key="download_trends_pdf",
+                )
+            plt.close(trend)
+        with effect_tab:
+            effect = effect_figure(result)
+            st.pyplot(effect)
+            png, pdf = st.columns(2)
+            with png:
+                st.download_button(
+                    "Download effect plot (PNG)",
+                    figure_to_bytes(effect, "png"),
+                    file_name="treatment_effect.png",
+                    mime="image/png",
+                    key="download_effect_png",
+                )
+            with pdf:
+                st.download_button(
+                    "Download effect plot (vector PDF)",
+                    figure_to_bytes(effect, "pdf"),
+                    file_name="treatment_effect.pdf",
+                    mime="application/pdf",
+                    key="download_effect_pdf",
+                )
+            plt.close(effect)
     with st.expander("Diagnostics and full statsmodels output"):
         st.json(result.diagnostics)
         st.text(result.summary_text())
@@ -247,7 +303,7 @@ if st.button("Run model", type="primary", width="stretch"):
     with d1:
         st.download_button(
             "Download complete result bundle",
-            export_bundle(result),
+            export_bundle(result, include_figures=show_visuals),
             file_name="econdid_results.zip",
             mime="application/zip",
         )
